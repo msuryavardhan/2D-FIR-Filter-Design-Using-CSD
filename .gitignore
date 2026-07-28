@@ -1,0 +1,6 @@
+# Ignore temporary files
+*.log
+*.jou
+*.str
+*.tmp
+*.cache
