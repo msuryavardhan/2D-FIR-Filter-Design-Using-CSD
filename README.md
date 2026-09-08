@@ -302,7 +302,7 @@ The complete architecture processes the incoming image samples by applying optim
 
 ### Architecture
 
-![Architecture](Shift_register_block_arch.png)
+![Architecture](Results/Equations/Shift_register_block_arch.png)
 ```
 
 
