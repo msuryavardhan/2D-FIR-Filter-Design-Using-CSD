@@ -240,15 +240,13 @@ The following outputs are generated during MATLAB implementation:
 - Order-11 Filter Results
 - Band Edge Analysis
 
+### Order-11 Contour Plot
 
-```
 ![Order 11 Contour Plot](MATLAB/Order_11_contour.png)
-```
 
+### Order-11 Filter Response
 
-```
-MATLAB/order_11.png
-```
+![Order 11 Filter Response](MATLAB/order_11.png)
 
 ---
 
