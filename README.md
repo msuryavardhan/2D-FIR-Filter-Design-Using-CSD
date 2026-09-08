@@ -243,13 +243,13 @@ The following outputs are generated during MATLAB implementation:
 > **(Insert MATLAB Frequency Response Images Here)**
 
 ```
-Images/Frequency_Response.png
+MATLAB/Order 11 contour.png
 ```
 
 > **(Insert Contour Plot Here)**
 
 ```
-Images/Contour.png
+MATLAB/order 11.png
 ```
 
 ---
