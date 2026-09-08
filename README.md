@@ -240,13 +240,11 @@ The following outputs are generated during MATLAB implementation:
 - Order-11 Filter Results
 - Band Edge Analysis
 
-> **(Insert MATLAB Frequency Response Images Here)**
 
 ```
-MATLAB/Order_11_contour.png
+![Order 11 Contour Plot](MATLAB/Order_11_contour.png)
 ```
 
-> **(Insert Contour Plot Here)**
 
 ```
 MATLAB/order_11.png
