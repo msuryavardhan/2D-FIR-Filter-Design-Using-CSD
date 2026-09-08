@@ -299,13 +299,12 @@ The major building blocks include:
 
 The complete architecture processes the incoming image samples by applying optimized CSD coefficients to perform two-dimensional convolution.
 
-> **Insert Overall RTL Block Diagram Here**
 
-```
-Images/RTL_Architecture.png
+### Architecture
+
+![Architecture](Shift_register_block_arch.png)
 ```
 
----
 
 # RTL Design Flow
 
