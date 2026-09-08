@@ -1,706 +1,350 @@
-# VLSI Design and Implementation of Two-Dimensional FIR Filter Architectures Using Canonical Signed Digit (CSD)
+# VLSI Design and Implementation of a 2D FIR Filter Using Canonical Signed Digit (CSD)
 
 ![Verilog](https://img.shields.io/badge/HDL-Verilog-blue)
-![MATLAB](https://img.shields.io/badge/MATLAB-R2022a-orange)
-![Cadence Genus](https://img.shields.io/badge/Cadence-Genus-red)
-![ASIC](https://img.shields.io/badge/Design-ASIC-success)
-![DSP](https://img.shields.io/badge/Domain-Digital%20Signal%20Processing-brightgreen)
+![MATLAB](https://img.shields.io/badge/MATLAB-Signal%20Processing%20Toolbox-orange)
+![Cadence Genus](https://img.shields.io/badge/ASIC%20Synthesis-Cadence%20Genus%2045nm-red)
 ![License](https://img.shields.io/badge/License-MIT-green)
 
 ---
 
-# Project Overview
+## Overview
 
-This project presents the **design, optimization, RTL implementation, and ASIC synthesis** of a **Two-Dimensional Finite Impulse Response (2D FIR) Filter** using **Canonical Signed Digit (CSD)** representation for multiplier optimization.
+This repository implements a **circularly-symmetric Two-Dimensional (2D) FIR filter** using **Canonical Signed Digit (CSD)** coefficient representation, going from MATLAB-based filter design to a synthesizable Verilog RTL implementation.
 
-The primary objective of this work is to reduce the hardware complexity associated with conventional multiplier-based FIR filters by replacing multipliers with **shift-and-add operations** using CSD coefficients. This significantly improves hardware efficiency by reducing:
-
-- Silicon Area
-- Power Consumption
-- Critical Path Delay
-- Hardware Complexity
-
-The project combines **Digital Signal Processing (DSP)** algorithms with **RTL Design** and **ASIC Synthesis**, making it suitable for VLSI and FPGA implementations.
+Instead of using dedicated hardware multipliers, the filter coefficients are converted to CSD form so that multiplication by each constant coefficient can be realized with **shift and add/subtract operations** in hardware. The repository contains the MATLAB design scripts, the Verilog RTL, testbenches, RTL schematics, FPGA resource-utilization reports, and Cadence Genus (45 nm) ASIC synthesis results.
 
 ---
 
-# Project Highlights
+## Project Highlights
 
-✔ MATLAB based 2D FIR Filter Design
-
-✔ McClellan Transform based Filter Generation
-
-✔ Canonical Signed Digit (CSD) Coefficient Optimization
-
-✔ Hierarchical Verilog RTL Design
-
-✔ Shift Register Based Architecture
-
-✔ Fully Direct Form 2D FIR Architecture
-
-✔ RTL Simulation
-
-✔ RTL Schematics
-
-✔ Cadence Genus ASIC Synthesis
-
-✔ Area, Power and Timing Analysis
-
-✔ Performance Comparison with Conventional Architecture
+- 2D circularly-symmetric FIR filter designed in MATLAB via **McClellan frequency transformation** (`ftrans2`) of a 1D equiripple filter (`firpm`)
+- Coefficient-to-CSD conversion using a canonical-signed-digit utility function (`csdigit.m`)
+- Multiplierless Verilog RTL datapath — constant multiplication implemented with shift-and-add row-filter modules (`eq1.v`–`eq6.v`)
+- 64-word **Shift Register Block (SRB)** used to align delayed rows for 2D convolution
+- Fully-direct-form 2D FIR architecture (`EQ1`–`EQ11` / `SRB1`–`SRB11`) as documented in the project's architecture diagram
+- RTL functional verification using dedicated Verilog testbenches
+- FPGA resource-utilization synthesis reports (per module)
+- ASIC synthesis using **Cadence Genus at 45 nm**, including an Area/Power/Delay comparison against a conventional (non-CSD) implementation, and a comparison against prior published architectures
 
 ---
 
-# Motivation
-
-Two-Dimensional FIR filters are widely used in image processing applications such as:
-
-- Image Enhancement
-- Image Restoration
-- Image Sharpening
-- Medical Imaging
-- Pattern Recognition
-- Video Processing
-- Computer Vision
-- Satellite Image Processing
-
-Although FIR filters provide excellent linear phase characteristics and guaranteed stability, they require a large number of multipliers, resulting in increased silicon area, power consumption, and hardware complexity.
-
-To address these challenges, this project employs the **Canonical Signed Digit (CSD)** representation, which minimizes the number of non-zero digits in filter coefficients. This enables multiplication to be implemented using only **shift and add operations**, significantly reducing hardware resource utilization.
-
----
-
-# Key Features
-
-- Design of a Circularly Symmetric 2D FIR Filter
-- MATLAB-Based Coefficient Generation
-- McClellan Transform Implementation
-- Canonical Signed Digit (CSD) Optimization
-- Multiplierless FIR Architecture
-- Verilog HDL RTL Design
-- Modular Hardware Architecture
-- Shift Register Based Implementation
-- ASIC Synthesis using Cadence Genus
-- Performance Evaluation using Area, Power and Delay Metrics
-
----
-
-# Design Flow
+## Design Flow
 
 ```text
-                    MATLAB
-
-                       │
-
-                       ▼
-
-          Filter Coefficient Generation
-
-                       │
-
-                       ▼
-
-         Canonical Signed Digit (CSD)
-
-                       │
-
-                       ▼
-
-          Verilog RTL Implementation
-
-                       │
-
-                       ▼
-
-               RTL Simulation
-
-                       │
-
-                       ▼
-
-         Cadence Genus Synthesis
-
-                       │
-
-                       ▼
-
-      Area • Power • Timing Analysis
-
-                       │
-
-                       ▼
-
-        Hardware Performance Evaluation
+MATLAB (firpm + ftrans2)
+        │
+        ▼
+2D Filter Coefficients
+        │
+        ▼
+CSD Coefficient Conversion (csdigit.m)
+        │
+        ▼
+Verilog RTL (eq1–eq6, srb, final)
+        │
+        ▼
+RTL Functional Simulation (testbenches)
+        │
+        ▼
+FPGA Resource Utilization Reports  +  Cadence Genus ASIC Synthesis (45 nm)
 ```
 
 ---
 
-# System Architecture
+## System Architecture
 
-The overall implementation flow of the proposed architecture is shown below.
+The complete filter is built from row-filter modules (`EQ1`–`EQ11`) interleaved with shift-register blocks (`SRB1`–`SRB11`), whose partial outputs are summed to produce `yout`. This mirrors the structure of `RTL/Source_Code/final.v`.
 
-> **(Insert Architecture Diagram Here)**
-
-```
-Images/Architecture.png
-```
-
-The proposed architecture consists of the following stages:
-
-1. MATLAB-based filter coefficient generation
-2. CSD coefficient conversion
-3. Row Filter implementation
-4. Shift Register Block (SRB)
-5. Fully Direct Form 2D FIR Architecture
-6. RTL Verification
-7. ASIC Synthesis
+<p align="center">
+  <img src="Results/Shift_register_block_arch.png" alt="2D FIR Filter Architecture using Row Filters and Shift Register Blocks" width="800">
+</p>
 
 ---
 
-# Repository Structure
+## MATLAB Implementation
 
-```
-VLSI-2D-FIR-Filter-Using-CSD
+### Filter Design
+
+`MATLAB/Code.m` and `MATLAB/MatlabCode.m` design a 1D equiripple linear-phase FIR filter and transform it into a 2D circularly-symmetric filter:
+
+- `remezord` — estimates the required filter order from band edges, magnitudes, and ripple
+- `firpm` — designs the 1D equiripple FIR filter
+- `freqz` — computes and plots the 1D magnitude response
+- `ftrans2` — applies the McClellan transformation to generate the 2D filter from the 1D design
+- `freqz2` — computes the 2D frequency response
+- `mesh` / `plot` / `contour` — visualize the 2D magnitude response
+
+### CSD Coefficient Generation
+
+`MATLAB/csdigit.m` converts a decimal coefficient into its Canonical Signed Digit representation (adapted from the `csdigit` utility by Patrick J. Moran, AirSprite Technologies Inc., 2006, included with its original license header). This is the representation used to derive the shift-and-add structure implemented in the RTL row-filter modules.
+
+### MATLAB Results
+
+<p align="center">
+  <img src="MATLAB/order_11.png" alt="2D Circularly-Symmetric Filter — Contour Plot" width="500">
+</p>
+
+<p align="center">
+  <img src="MATLAB/Order_11_contour.png" alt="2D Circularly-Symmetric Filter — 3D Magnitude Response Mesh Plot" width="500">
+</p>
+
+> Note: `MATLAB/order_11.png` is the contour plot and `MATLAB/Order_11_contour.png` is the 3D mesh plot — the filenames are swapped relative to their actual content and are reproduced here exactly as they exist in the repository.
+
+`MATLAB/untitled.png` (and corresponding `.fig` files `Order 9.fig`, `Order 11.fig`, `untitled.fig`) contain additional contour-plot runs at other filter orders; the repository does not label which `.fig` corresponds to `untitled.png`, so it is not captioned with a specific order here.
+
+---
+
+## RTL Design
+
+### Verilog Modules
+
+All source files are in `RTL/Source_Code/`:
+
+| File | Role |
+|---|---|
+| `final.v` | Top-level module — instantiates the `eq1`–`eq6` row filters and `srb` shift-register blocks (as `RF1`–`RF11` / `SRB1`–`SRB11`) and sums their outputs into `yout` |
+| `eq1.v` | Row-filter module — 10-stage delay line (`dff`) with shift-and-add CSD multiplication |
+| `eq2.v` | Row-filter module — same shift-and-add structure with a different coefficient set |
+| `eq3.v` | Row-filter module — same shift-and-add structure with a different coefficient set |
+| `eq4.v` | Row-filter module — same shift-and-add structure with a different coefficient set |
+| `eq5.v` | Row-filter module — same shift-and-add structure with a different coefficient set |
+| `eq6.v` | Row-filter module — same shift-and-add structure with a different coefficient set |
+| `srb.v` | Shift Register Block — 64-stage chain of `dff` instances |
+| `dff.v` | D flip-flop with reset, used throughout as the delay element |
+| `dff1.v` | A second D flip-flop module identical to `dff.v`; present in the source tree but not instantiated by any other module |
+
+### Row-Filter Shift-and-Add Architecture
+
+Each `eqN.v` module implements constant multiplication as a chain of right-shift and add operations on delayed samples, matching the CSD coefficients from the MATLAB design. `eq1.v`, for example, corresponds to the following diagram:
+
+<p align="center">
+  <img src="Architecture/Eq 1.png" alt="Shift-and-Add CSD Architecture for eq1" width="800">
+</p>
+
+Corresponding diagrams for the other coefficient sets (`Eq 2.png`–`Eq 6.png`) are available in `Architecture/`.
+
+### Shift Register Block (SRB)
+
+`srb.v` is a 64-stage register chain used to buffer a full row of samples, so that vertically-neighboring rows are available together for the 2D convolution.
+
+<p align="center">
+  <img src="RTL/RTL_Schematics/SRB.png" alt="RTL Schematic of the 64-Word Shift Register Block" width="800">
+</p>
+
+### RTL Verification
+
+The design is exercised by four testbenches in `RTL/Testbench/`:
+
+| Testbench | Target | Description |
+|---|---|---|
+| `tb_major.v` | `final` | Generates clock/reset and applies a sequence of directed input values to the top-level filter |
+| `tb_pro.v` | `final` | Generates clock/reset and applies a longer directed input sequence to the top-level filter |
+| `tb_srb.v` | `srb` | Applies a static input to the shift register block |
+| `tb_srb123.v` | `srb` | Applies a short directed sequence to the shift register block |
+
+These are directed-stimulus testbenches (clock generation, reset sequence, and a fixed sequence of input values) intended for waveform-based functional simulation; they do not contain self-checking assertions. The repository does not include simulation waveform or log-file screenshots, so no simulation-tool name or pass/fail result is stated here.
+
+### RTL Schematics
+
+<p align="center">
+  <img src="Results/final filter elob.png" alt="Elaborated RTL Schematic of the Top-Level final Module" width="900">
+</p>
+
+Per-module tool-generated schematics (`RowFilter1.pdf`–`RowFilter6.pdf`) are available in `RTL/RTL_Schematics/`.
+
+---
+
+## Synthesis and Results
+
+### FPGA Resource Utilization
+
+Per-module synthesis utilization reports (Xilinx 7-series primitives — `FDCE`, `SRL16E`, `CARRY4`, `MMCME2_ADV`, `IDELAYE2`, etc.) are provided as report screenshots. The figures below are read directly from those reports:
+
+| Module | Slice LUTs | Slice Registers | Notes |
+|---|---:|---:|---|
+| `final` (top level) | 95 | 137 | Also reports 154 Bonded IOBs (of 200) and 1 `BUFG`; primitive breakdown includes 144 `OBUF`, 117 `FDCE`, 51 `LUT2`, 27 `CARRY4`, 24 `SRLC32E` |
+| `srb` | 20 | 79 | — |
+| `eq1` | 22 | 35 | Cell usage: 27 `FDCE`, 18 `LUT2`, 10 `IBUF`, 8 `SRL16E`, 8 `OBUF`, 8 `FDRE`, 2 `CARRY4`, 1 `BUFG` |
+
+Source screenshots: `Results/final 1.1.png`, `final 1.2.png`, `final 1.3.png`, `final 1.4png.png`, `Results/srb1.1.png`, `srb1.2.png`, `Results/Equations/eq1.1.png`, `eq1.2.png`. Corresponding per-module reports for `eq2`–`eq6` (`eq2.1.png`/`eq2.2.png` … `eq6.1.png`/`eq6.2.png`) are also available in `Results/Equations/`.
+
+A separate design-elaboration summary (`Results/final output.png`) reports an adder breakdown (2-, 3-, 11-, 16-, 17-, 18-, and 23-input adders) and a total of 814 8-bit registers for the elaborated design.
+
+### ASIC Synthesis (Cadence Genus, 45 nm)
+
+`Synthesis/Reports/ADP_Report.png` reports Area/Power/Delay for the Fully-Direct architecture, comparing continuous (non-CSD) coefficients against CSD coefficients, for both 8-bit and 16-bit filter input:
+
+<p align="center">
+  <img src="Synthesis/Reports/ADP_Report.png" alt="ASIC Synthesis Results — Continuous Coefficients vs CSD (Cadence Genus, 45nm)" width="800">
+</p>
+
+| Coefficient Type | Architecture | Input Width | Area (µm²) | Power (mW) | Delay (ns) |
+|---|---|---:|---:|---:|---:|
+| Continuous Coefficients | Fully-Direct | 8-bit | 89010 | 34.8 | 9.05 |
+| Continuous Coefficients | Fully-Direct | 16-bit | 189543 | 51.002 | 18.00 |
+| CSD | Fully-Direct | 8-bit | 3109 | 2.1803 | 6.28 |
+| CSD | Fully-Direct | 16-bit | 16239 | 5.1358 | 16.56 |
+
+### Comparison with Prior Work
+
+`Synthesis/Reports/ASIC_result_comp.png` compares the CSD Fully-Direct architecture (`N = 11`) against prior published 2D FIR filter architectures, as documented in the project report:
+
+<p align="center">
+  <img src="Synthesis/Reports/ASIC_result_comp.png" alt="Synthesis Results Comparison with Prior Published Architectures" width="800">
+</p>
+
+| Architecture | N | Area (µm²) | Power (mW) | Delay (ns) | ADP (µm²·ms) | PDP (µm²·mW) |
+|---|---:|---:|---:|---:|---:|---:|
+| Kumar et al. | 8 | 651615 | 20.1069 | 6.53 | 0.531880 | 131.3 |
+| Mohanty et al. | 8 | 1720962 | 50.0106 | 11.79 | 25.37555 | 589.62 |
+| Khoo et al. | 8 | 356293 | 9.3807 | 13.1 | 4.636084 | 122.89 |
+| Chen et al. | 9 | 22359 | 9.356 | 19.23 | 0.429963 | 179.91 |
+| **Proposed (Fully-Direct)** | **11** | **16239** | **5.1358** | **16.56** | **0.268917** | **85.04** |
+
+The full list of cited works corresponding to `[42]`, `[43]`, `[31]`, `[44]` is in the project report under `Documentation/Report/`.
+
+---
+
+## Repository Structure
+
+```text
+2D-FIR-Filter-Design-Using-CSD/
 │
-├── MATLAB
-│   ├── Filter_Design
-│   ├── CSD_Generation
-│   ├── Coefficients
-│   ├── Scripts
-│   └── Results
+├── Architecture/
+│   ├── All Architectures Word.docx
+│   └── Eq 1.png ... Eq 6.png
 │
-├── RTL
-│   ├── Source_Code
-│   ├── Testbench
-│   └── RTL_Schematics
+├── Documentation/
+│   ├── Papers/
+│   │   └── Major Report-modfied.docx
+│   ├── Presentation/
+│   │   └── modified-Major_Project_Final_Review PPT.pptx
+│   └── Report/
+│       └── Major Report-modfied.docx
 │
-├── Synthesis
-│   └── Cadence_Genus
-│       ├── Reports
-│       ├── Netlist
-│       └── Scripts
+├── MATLAB/
+│   ├── Code.m
+│   ├── MatlabCode.m
+│   ├── csdigit.m
+│   ├── Order 9.fig
+│   ├── Order 11.fig
+│   ├── Order_11_contour.png
+│   ├── order_11.png
+│   ├── untitled.fig
+│   └── untitled.png
 │
-├── Results
-│   ├── ASIC_Results
-│   ├── Performance_Comparison
-│   ├── Resource_Utilization
-│   └── Images
+├── References/
+│   ├── 2. OVK-MSSP.pdf
+│   ├── Bindima, T., & Elias, E. (2019). Low-complexity 2-D digital FIR filters using polyphase decomposition and....pdf
+│   ├── IJRTEPAPER-OVK.pdf
+│   └── memory-optimization-in-adaptive-fir-filter-using-apc-oms-and-cse-method-IJERTCONV3IS16113.pdf
 │
-├── Documentation
-│   ├── Report
-│   ├── Presentation
-│   └── Papers
+├── Results/
+│   ├── Equations/
+│   │   └── eq1.1.png, eq1.2.png ... eq6.1.png, eq6.2.png
+│   ├── Final Filter.pdf
+│   ├── Final Filter 1.png
+│   ├── Final Filter.png
+│   ├── Shift_Register_Block.png
+│   ├── Shift_register_block_arch.png
+│   ├── final 1.1.png, final 1.2.png, final 1.3.png, final 1.4png.png
+│   ├── final filter elob.png
+│   ├── final output.png
+│   └── srb1.1.png, srb1.2.png
 │
-├── Architecture
+├── RTL/
+│   ├── RTL_Schematics/
+│   │   ├── RowFilter1.pdf ... RowFilter6.pdf
+│   │   └── SRB.png
+│   ├── Source_Code/
+│   │   ├── dff.v
+│   │   ├── dff1.v
+│   │   ├── eq1.v ... eq6.v
+│   │   ├── final.v
+│   │   └── srb.v
+│   └── Testbench/
+│       ├── tb_major.v
+│       ├── tb_pro.v
+│       ├── tb_srb.v
+│       └── tb_srb123.v
 │
-├── Images
+├── Synthesis/
+│   └── Reports/
+│       ├── ADP_Report.png
+│       └── ASIC_result_comp.png
 │
-└── References
+├── LICENSE
+└── README.md
 ```
 
 ---
 
-# Tools and Software
+## Tools and Technologies
 
 | Category | Tool |
-|-----------|------|
-| Programming Language | Verilog HDL |
-| Algorithm Development | MATLAB |
-| RTL Simulation | Cadence NC Launch / NC Simulator |
-| Logic Synthesis | Cadence Genus |
-| Documentation | Microsoft Word |
-| Presentation | Microsoft PowerPoint |
+|---|---|
+| Filter design / algorithm development | MATLAB (Signal Processing Toolbox: `firpm`, `remezord`, `ftrans2`, `freqz2`) |
+| RTL design | Verilog HDL |
+| FPGA synthesis / resource reporting | Xilinx synthesis tool (7-series primitives) |
+| ASIC synthesis | Cadence Genus, 45 nm |
+| Documentation | Microsoft Word, Microsoft PowerPoint |
 
 ---
 
-# MATLAB Implementation
+## Applications
 
-The design process begins with MATLAB, where the filter coefficients are generated and optimized before hardware implementation.
-
-The MATLAB workflow includes:
-
-- Filter Specification
-- McClellan Transformation
-- Circular Symmetry Generation
-- Filter Coefficient Calculation
-- Canonical Signed Digit (CSD) Conversion
-- Frequency Response Analysis
-- Contour Plot Generation
+2D FIR filters of this type are generally used in image and video processing (e.g. smoothing/low-pass filtering of image data). The repository does not include a specific application demo or dataset beyond the filter design and its hardware implementation.
 
 ---
 
-## MATLAB Outputs
+## Future Work
 
-The following outputs are generated during MATLAB implementation:
-
-- Low Pass Filter Frequency Response
-- Contour Plot
-- Filter Coefficients
-- CSD Coefficients
-- Order-9 Filter Results
-- Order-11 Filter Results
-- Band Edge Analysis
-
-### Order-11 Contour Plot
-
-![Order 11 Contour Plot](MATLAB/Order_11_contour.png)
-
-### Order-11 Filter Response
-
-![Order 11 Filter Response](MATLAB/order_11.png)
+The repository's synthesis results are limited to the Fully-Direct CSD architecture described above. Beyond that, no future-work roadmap is documented in the repository.
 
 ---
 
-# Canonical Signed Digit (CSD)
+## How to Use
 
-Canonical Signed Digit (CSD) representation is an optimized number representation technique used to minimize the number of non-zero digits in constant coefficients.
+### MATLAB
 
-Unlike conventional binary multiplication, CSD enables multiplication using only:
+1. Open `MATLAB/Code.m` (or `MATLAB/MatlabCode.m`) in MATLAB.
+2. Run the script and supply the requested inputs at the prompts: band edges, desired magnitudes, desired ripple, and sampling frequency.
+3. The script prints the 1D FIR filter coefficients and plots the 1D magnitude response, then generates the 2D filter via `ftrans2` and plots its 2D response (`mesh`/`plot`/`contour`, depending on which lines are active in the script).
+4. `MATLAB/csdigit.m` can be called separately, e.g. `csdigit(num, range, resolution)`, to obtain the CSD representation of a coefficient.
 
-- Shift Operations
-- Addition
-- Subtraction
+### Verilog RTL
 
-This eliminates the need for dedicated hardware multipliers, leading to significant reductions in silicon area and power consumption.
-
-### Advantages of CSD
-
-- Reduced Hardware Complexity
-- Lower Area
-- Lower Power Consumption
-- Reduced Switching Activity
-- Faster Arithmetic Operations
-- Efficient ASIC Implementation
-
----
----
-
-# RTL Design Methodology
-
-After generating the optimized CSD coefficients in MATLAB, the hardware architecture was implemented using **Verilog HDL**. The design follows a modular and hierarchical approach, making the implementation easier to understand, verify, and extend.
-
-The RTL design converts the mathematical representation of the 2D FIR filter into synthesizable digital hardware. Each functional block performs a dedicated task, and all modules are integrated to realize the complete filter architecture.
-
-The modular implementation improves readability, simplifies debugging, and enables future enhancements such as FPGA deployment or ASIC synthesis.
+1. The RTL sources are in `RTL/Source_Code/` and the testbenches in `RTL/Testbench/`.
+2. `tb_major.v` and `tb_pro.v` instantiate the top-level `final` module; `tb_srb.v` and `tb_srb123.v` instantiate `srb` standalone.
+3. Compile and simulate the desired testbench together with the RTL sources it depends on, using a Verilog simulator of your choice.
 
 ---
 
-# Hardware Architecture
+## References
 
-The proposed architecture consists of several interconnected hardware modules.
+The following reference material is included in `References/` and `Documentation/Report/`:
 
-The major building blocks include:
+- `References/2. OVK-MSSP.pdf`
+- `References/Bindima, T., & Elias, E. (2019). Low-complexity 2-D digital FIR filters using polyphase decomposition and....pdf`
+- `References/IJRTEPAPER-OVK.pdf`
+- `References/memory-optimization-in-adaptive-fir-filter-using-apc-oms-and-cse-method-IJERTCONV3IS16113.pdf`
+- `Documentation/Report/Major Report-modfied.docx` (full project report, including the literature comparison cited above)
 
-- Input Data Interface
-- Row Filter Modules
-- Shift Register Block (SRB)
-- Delay Elements
-- CSD Arithmetic Blocks
-- Output Accumulation Logic
-
-The complete architecture processes the incoming image samples by applying optimized CSD coefficients to perform two-dimensional convolution.
-
-
-### Architecture
-
-![Architecture](Results/Shift_register_block_arch.png)
-```
-
-
-# RTL Design Flow
-
-```
-Input Pixels
-      │
-      ▼
-Row Filter
-      │
-      ▼
-Shift Register Block
-      │
-      ▼
-Column Processing
-      │
-      ▼
-CSD Arithmetic
-      │
-      ▼
-Output Accumulator
-      │
-      ▼
-Filtered Image
-```
+`MATLAB/csdigit.m` is adapted from the `csdigit` utility originally written by Patrick J. Moran, AirSprite Technologies Inc. (2006); its original license header is preserved in the file.
 
 ---
 
-# Verilog RTL Modules
-
-The design is divided into multiple Verilog modules to improve modularity and code reuse.
-
-## Main Modules
-
-| Module | Description |
-|---------|-------------|
-| final.v | Top-level module integrating the complete 2D FIR filter |
-| eq1.v | Arithmetic processing block |
-| eq2.v | Arithmetic processing block |
-| eq3.v | Arithmetic processing block |
-| eq4.v | Arithmetic processing block |
-| eq5.v | Arithmetic processing block |
-| eq6.v | Arithmetic processing block |
-| srb.v | Shift Register Block for storing intermediate samples |
-| dff.v | D Flip-Flop used for delay implementation |
-
-Each module performs a dedicated function within the overall filtering architecture.
-
----
-
-# Shift Register Block (SRB)
-
-The Shift Register Block is responsible for storing previous input samples so that neighboring pixels are simultaneously available during convolution.
-
-The SRB enables continuous streaming of image data without repeatedly accessing external memory.
-
-### Advantages
-
-- Efficient data buffering
-- Continuous pixel flow
-- Reduced memory access
-- Suitable for pipelined architectures
-
-> **Insert Shift Register Diagram Here**
-
-```
-Images/Shift_Register.png
-```
-
----
-
-# CSD Arithmetic Implementation
-
-Instead of conventional multipliers, the proposed design utilizes **Canonical Signed Digit (CSD)** coefficients.
-
-Multiplication by constant coefficients is realized using:
-
-- Left Shift Operations
-- Right Shift Operations
-- Addition
-- Subtraction
-
-This approach significantly reduces hardware complexity compared to conventional multiplier-based implementations.
-
----
-
-# Hierarchical RTL Design
-
-The hardware implementation follows a hierarchical design methodology.
-
-```
-Top Module (final.v)
-
-│
-
-├── eq1
-
-├── eq2
-
-├── eq3
-
-├── eq4
-
-├── eq5
-
-├── eq6
-
-├── srb
-
-└── dff
-```
-
-The hierarchy improves maintainability, debugging, and scalability of the RTL implementation.
-
----
-
-# RTL Verification
-
-The functionality of the RTL modules was verified through simulation by applying representative input vectors and observing the generated outputs.
-
-The verification process ensured:
-
-- Correct functional behavior
-- Proper data flow between modules
-- Correct operation of delay elements
-- Accurate implementation of the filter architecture
-
----
-
-# RTL Schematics
-
-RTL schematic generation provides a graphical representation of the synthesized hardware structure derived from the Verilog source code.
-
-The schematics help visualize:
-
-- Module hierarchy
-- Data flow
-- Arithmetic blocks
-- Registers
-- Interconnections
-
-> **Insert RTL Schematic Here**
-
-```
-Images/RTL_Schematic.png
-```
-
----
-
-# Design Advantages
-
-The proposed implementation offers several advantages over conventional multiplier-based FIR filter architectures.
-
-- Reduced arithmetic complexity
-- Efficient hardware implementation
-- Modular RTL architecture
-- Improved scalability
-- Lower computational complexity
-- Optimized constant multiplication using CSD
-- Suitable for FPGA and ASIC implementation
-
----
-
-# Applications
-
-The proposed 2D FIR filter architecture can be used in several Digital Signal Processing and Image Processing applications.
-
-- Image Enhancement
-- Image Restoration
-- Medical Imaging
-- Video Processing
-- Object Detection Pre-processing
-- Pattern Recognition
-- Remote Sensing
-- Satellite Imaging
-- Edge Enhancement
-- Noise Reduction
-
----
-
-# Project Learning Outcomes
-
-This project provided practical experience in several VLSI and Digital Design concepts.
-
-- Digital Signal Processing Fundamentals
-- Two-Dimensional FIR Filter Design
-- Canonical Signed Digit Representation
-- MATLAB Algorithm Development
-- RTL Design using Verilog HDL
-- Hierarchical Hardware Design
-- Modular Digital Design Methodology
-- Hardware-Oriented Optimization Techniques
-- Technical Documentation
-
----
-
-# Source Code Organization
-
-```
-RTL/
-
-├── final.v
-
-├── eq1.v
-
-├── eq2.v
-
-├── eq3.v
-
-├── eq4.v
-
-├── eq5.v
-
-├── eq6.v
-
-├── srb.v
-
-└── dff.v
-```
-
----
----
-
-# Project Results
-
-The implementation demonstrates the feasibility of designing a Two-Dimensional FIR filter using Canonical Signed Digit (CSD) representation. The combination of MATLAB-based coefficient generation and modular Verilog RTL implementation provides an efficient framework for hardware realization.
-
-The project successfully demonstrates:
-
-- MATLAB-based 2D FIR filter design
-- McClellan Transform for coefficient generation
-- Canonical Signed Digit (CSD) optimization
-- Hierarchical Verilog RTL implementation
-- Modular hardware architecture
-- RTL verification
-- Hardware-oriented filter implementation methodology
-
----
-
-# MATLAB Results
-
-MATLAB was used to verify the filter characteristics before hardware implementation.
-
-The generated outputs include:
-
-- Frequency Response
-- Magnitude Response
-- Contour Plots
-- Filter Coefficients
-- Optimized CSD Coefficients
-
-> **Insert MATLAB Frequency Response**
-
-```
-Images/Frequency_Response.png
-```
-
-> **Insert MATLAB Contour Plot**
-
-```
-Images/Contour_Plot.png
-```
-
----
-
-# Repository Contents
-
-| Folder | Description |
-|---------|-------------|
-| MATLAB | MATLAB source files and filter design scripts |
-| RTL | Verilog HDL source code |
-| Documentation | Final report, presentation, and supporting documents |
-| Architecture | System architecture and block diagrams |
-| Images | Figures used in the README |
-| Results | MATLAB outputs and project results |
-| References | Research papers and reference material |
-
----
-
-# Skills Demonstrated
-
-This project helped strengthen practical knowledge in the following areas:
-
-### Digital Signal Processing
-- FIR Filter Design
-- 2D Digital Filtering
-- McClellan Transformation
-- Frequency Response Analysis
-
-### RTL Design
-- Verilog HDL
-- Modular Design
-- Hierarchical Architecture
-- Shift Register Design
-- Digital Arithmetic
-
-### VLSI Design
-- Hardware-Oriented Optimization
-- Canonical Signed Digit (CSD)
-- Efficient Constant Multiplication
-- Digital Hardware Design Methodology
-
-### Software Tools
-- MATLAB
-- Verilog HDL
-- Microsoft Word
-- Microsoft PowerPoint
-
----
-
-# Future Enhancements
-
-The current repository focuses on the algorithm development and RTL implementation of the proposed architecture.
-
-Possible future enhancements include:
-
-- FPGA implementation and hardware validation
-- ASIC synthesis using industry-standard EDA tools
-- Static Timing Analysis (STA)
-- Physical Design implementation
-- Power optimization techniques
-- Pipelined architecture
-- Support for higher-order filters
-- Integration with image-processing pipelines
-
----
-
-# How to Use
-
-## MATLAB
-
-1. Open the MATLAB folder.
-2. Execute the filter design scripts.
-3. Generate filter coefficients.
-4. Observe the frequency response and contour plots.
-
-## Verilog RTL
-
-1. Open the RTL folder.
-2. Review the Verilog modules.
-3. Compile the design using your preferred Verilog simulator.
-4. Simulate the top-level module and verify functionality.
-
----
-
-# References
-
-1. R. E. Crochiere and L. R. Rabiner, *Multirate Digital Signal Processing*.
-2. Sanjit K. Mitra, *Digital Signal Processing: A Computer-Based Approach*.
-3. John G. Proakis and Dimitris G. Manolakis, *Digital Signal Processing: Principles, Algorithms, and Applications*.
-4. Research papers on Canonical Signed Digit (CSD) arithmetic and multiplierless FIR filter architectures.
-5. MATLAB documentation for digital filter design.
-
----
-
-# Author
+## Author
 
 **Manchikanti Surya Vardhan**
 
-B.Tech – Electronics and Communication (ECE) 
+B.Tech — Electronics and Communication Engineering (ECE)
 CVR College of Engineering, Hyderabad
 
-**Areas of Interest**
-
-- RTL Design
-- ASIC Design
-- Physical Design
-- Digital VLSI
-- FPGA Design
-- Digital Signal Processing
-
-GitHub: **https://github.com/msuryavardhan**
+GitHub: [github.com/msuryavardhan](https://github.com/msuryavardhan)
 
 ---
 
-# License
+## License
 
-This project is intended for educational and research purposes.
-
-You are welcome to use the source code and documentation with appropriate attribution.
-
----
-
-# Acknowledgements
-
-I would like to thank my faculty members, mentors, and project teammates for their guidance and support during the development of this academic project.
-
----
-
-## If you find this repository useful
-
-⭐ Star this repository
-
-🍴 Fork it
-
-📚 Use it for learning and academic purposes
-
----
-
-> *"Good hardware design is not just about making it work—it's about making it efficient, scalable, and elegant."*
+This project is licensed under the MIT License — see [`LICENSE`](LICENSE) for details.
